@@ -1,0 +1,83 @@
+* Header file
+  #+begin_src C++ :tangle ./std_lib_facilities.h :main no
+    #ifndef H112
+    #define H112 020215L
+
+    #include<iostream>
+    #include<iomanip>
+    #include<fstream>
+    #include<sstream>
+    #include<cmath>
+    #include<cstdlib>
+    #include<string>
+    #include<list>
+    #include<forward_list>
+    #include<vector>
+    #include<unordered_map>
+    #include<algorithm>
+    #include<array>
+    #include<regex>
+    #include<random>
+    #include<stdexcept>
+
+    using Unicode = long;
+
+    using namespace std;
+
+    struct Exit : runtime_error {
+      Exit() : runtime_error("Exit"){}
+    };
+
+    inline void error(const string& s)
+    {
+      throw runtime_error(s);
+    }
+
+    inline void error(const string& s1, const string& s2)
+    {
+      error(s1+s2);
+    }
+
+    inline void error(const string& s, int i)
+    {
+      ostringstream os;
+      os << s << ": " << i;
+      error(os.str());
+    }
+
+    #endif //H112
+  #+end_src
+
+* Ch 6
+*** Strategy
+  - What should the program do in the user's point of view?
+  - Try breaking the program into manageable parts.
+  - Build a small, limited version of the program that solves a key part
+*** Prototype
+    - Expression: 2+2
+      Result: 4
+    - Expression: 2+2*3
+      Result: 8
+    - Logic of the program
+      read_a_line
+      calculate
+      write_result
+    - To compile the code block, tangle the code block and compile with
+      ~SPC c C~ ~g++ ch6_1.cpp -std=c++14~.
+      After compile, run the program in shell by
+      ~SPC !~.
+    #+begin_src C++ :includes " \"std_lib_facilities.h\" " :tangle ch6_1.cpp 
+      cout<<"Expression: ";
+      int lval = 0;
+      int rval;
+      char op;
+      int res;
+      cin>>lval>>op>>rval;  // read something like 1+3
+
+      if (op=='+')
+        res = lval+rval;  // addition
+       else if(op=='-')
+         res = lval-rval;  // subtraction
+
+      cout<<"Result: "<<res<<'\n';
+    #+end_src
