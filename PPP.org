@@ -529,3 +529,84 @@
        return 2;
      }
   #+end_src
+* Ch 8
+  - A declaration is a statement that introduces a name into a scope
+  - A definition is a declaration that fully specifies the entity declared
+  - A definition of a variable set aside memory so can't be defined twice
+  - A declaration simply tells how a that name can be used
+  - A declaration is just an interface and doesn't allocate memory
+  - Something can be declared as often as you like if it's done consistently
+  #+begin_src C++
+    int x = 7;                      // definition
+    extern int x;                   // declaration
+    extern int x;                   // another declaration
+
+    double sqrt(double);            // declaration
+    double sqrt(double) {*/...*/};   // definition
+    double sqrt(double);            // another declaration
+
+    int sqrt(double);               // error!! inconsistency
+  #+end_src
+  - ~extern~ keyword states that declaration of ~x~ is not a definition
+  - Avoid using ~extern~
+  - A declaration supplies the type
+  - A definition supplies the object (the memory)
+  - A header should only contain declarations that can be duplicated in several files
+  - ~(a>=b)?a:b~ is ~a~ if ~a>=b~ and ~b~ otherwise
+  - Try to avoid class in function
+  - Function within function is not allowed
+  - Pass-by-const-reference: ex) ~const vector<double>& v~
+  - Pass-by-reference: ex) ~vector<double>& v~
+  - Technical point of reference
+  #+begin_src C++ :main no
+    #include <iostream>
+
+    int main()
+    {
+      int i = 7;
+      int& r = i;                   // r is a reference to i
+      r = 9;                        // i becomes 9
+      i = 10;
+      std::cout << r << ' ' << i << '\n'; // write: 10 10
+    }
+  #+end_src
+
+  #+RESULTS:
+  : 10 10
+  - Any use of ~r~ is a use of ~i~
+  - Reference can be a convenient shorthand for some object
+  - ~double& var = v[f(x)][g(y)];~
+  - Non-const-reference is essential in
+    - manipulating containers and other large objects
+    - for functions that change several objects (function can have only one return value)
+  - Argumnet checking and conversion
+  #+begin_src C++ :main no
+    #include <iostream>
+
+    int main()
+    {
+      double x = 1.2;
+      int x1 = x;                   // truncate x
+      int x2 = int(x);
+      int x3 = static_cast<int>(x); // explicit conversion
+
+      std::cout << "x1 = " << x1 << ", x2 = " << x2
+                << " ,x3 = " << x3 << std::endl;
+
+      return 0;
+    }
+  #+end_src
+
+  #+RESULTS:
+  | x1 = 1 | x2 = 1 | x3 = 1 |
+  - constexpr functions: evaluated by the compiler to avoid the same calculation done millions of times at run time
+  - A constexpr function with constexpr arguments is evaluated by compiler
+  - Construct the ~Date~ once only
+  #+begin_src C++ 
+    const Date& default_date()
+    {
+      static const Date dd(1970,1,1);
+      return dd;
+    }
+  #+end_src
+  - The ~static~ local variable is initialized only the first time its function is called
