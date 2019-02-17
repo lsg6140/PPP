@@ -66,7 +66,7 @@
       ~SPC c C~ ~$ g++ ch6_1.cpp -std=c++14~.
       After compile, run the program in shell by
       ~SPC !~.
-    #+begin_src C++ :includes " \"std_lib_facilities.h\" " :tangle ch6_1.cpp 
+    #+begin_src C++ :includes " \"std_lib_facilities.h\" " :tangle tangled/ch6_1.cpp 
       cout<<"Expression: ";
       int lval = 0;
       int rval;
@@ -85,7 +85,7 @@
     - Add multiplication and division
     - More than one operand (e.g. 1+2+3)
     - ~switch~: testing a value agianst many constants
-    #+begin_src C++ :includes " \"std_lib_facilities.h\" " :tangle ch6_2.cpp
+    #+begin_src C++ :includes " \"std_lib_facilities.h\" " :tangle tangled/ch6_2.cpp
       cout<<"Expression\n";
       cout<<"add an 'x' to end expression: ";
       int lval = 0;
@@ -347,7 +347,7 @@
 
 
     #+name: calculator_v0
-    #+begin_src C++ :tangle calculator_v0.cpp :main no :noweb yes
+    #+begin_src C++ :tangle tangled/calculator_v0.cpp :main no :noweb yes
       #include "std_lib_facilities.h"
 
       <<token>>
@@ -376,7 +376,7 @@
     #+end_src
 
     #+RESULTS: calculator_v0
-* DONE Ch 7
+* Ch 7
   CLOSED: [2019-02-14 Thu 13:26] DEADLINE: <2019-02-14 Thu 12:00> SCHEDULED: <2019-02-14 Thu 09:00>
   #+name: calculate
   #+begin_src C++ :main no
@@ -478,7 +478,7 @@
     }
   #+end_src
   #+name: calculator-v1
-  #+begin_src C++ :main no :tangle calculator-v1.cpp :noweb yes
+  #+begin_src C++ :main no :tangle tangled/calculator-v1.cpp :noweb yes
     #include "std_lib_facilities.h"
 
     // --------------------------------------
@@ -530,6 +530,7 @@
      }
   #+end_src
 * Ch 8
+** Summary
   - A declaration is a statement that introduces a name into a scope
   - A definition is a declaration that fully specifies the entity declared
   - A definition of a variable set aside memory so can't be defined twice
@@ -610,3 +611,518 @@
     }
   #+end_src
   - The ~static~ local variable is initialized only the first time its function is called
+** Exercise
+*** Drill 1
+   #+name: my.h
+   #+begin_src C++ :main no :tangle tangled/my.h
+     extern int foo;
+     void print_foo();
+     void print(int);
+   #+end_src
+   #+name: my.cpp
+   #+begin_src C++ :main no :tangle tangled/my.cpp
+     #include "my.h"
+     #include "std_lib_facilities.h"
+
+     int foo;
+     void print_foo()
+     {
+       cout << foo << endl;
+     }
+
+     void print(int i)
+     {
+       cout << i << endl;
+     }
+   #+end_src
+   #+name: use.cpp
+   #+begin_src C++ :main no :tangle tangled/use.cpp
+     #include "my.h"
+
+     int main()
+     {
+       foo = 7;
+       print_foo();
+
+       print(99);
+     }
+   #+end_src
+
+*** Drill 2
+    #+name: d2
+    #+begin_src C++ :main no :tangle tangled/d2.cpp
+      #include "std_lib_facilities.h"
+
+      void swap_v(int a, int b)
+      {
+        int temp;
+        temp = a;
+        a = b;
+        b = temp;
+      }
+
+      void swap_r(int& a, int& b)
+      {
+        int temp;
+        temp = a;
+        a = b;
+        b = temp;
+      }
+
+      /*
+      void swap_cr(const int& a, const int& b)
+      {
+        int temp;
+        temp = a;
+        a = b;
+        b = temp;
+      } */
+
+      int main()
+      {
+        int x = 7;
+        int y = 9;
+        swap_v(x,y);
+        cout << "x= " << x << ", y= " << y <<endl;
+        swap_v(7,9);
+        swap_r(x,y);
+        cout << "x= " << x << ", y= " << y << endl;
+        // swap_r(7,9); not compiled
+        double xx = 7;
+        double yy = 9;
+        swap_v(xx,yy);
+        // swap_r(xx,yy); not compiled
+        cout << "xx= " << xx << ", yy= " << yy << endl;
+      }
+    #+end_src
+    
+*** Drill 3
+    #+name: d3.cpp 
+    #+begin_src C++ :main no :tangle tangled/d3.cpp
+      #include "std_lib_facilities.h"
+
+      namespace X {
+        int var;
+        void print() {
+          cout << var << endl;
+        }
+      }
+
+      namespace Y {
+        int var;
+        void print()
+        {
+          cout << var << endl;
+        }
+      }
+
+      namespace Z {
+        int var;
+        void print()
+        {
+          cout << var << endl;
+        }
+      }
+
+      int main()
+      {
+        X::var = 7;
+        X::print();
+        using namespace Y;
+        var = 9;
+        print();
+        {
+          using Z::var;
+          using Z::print;
+          var = 11;
+          print();
+        }
+        print();
+        X::print();
+      }
+    #+end_src
+*** Ex 1
+ 
+
+* Calculator
+   #+name: grammar
+   #+begin_src C++ :main no :tangle tangled/calculator_v3.cpp
+     /*
+     Grammar
+
+     Calculation:
+       Statement
+       Print
+       Quit
+       Help
+       Calculation Statement
+
+     Statement:
+       Declaration
+       Expression
+
+     Print:
+       ";"
+
+     Quit:
+       "q"
+
+     Declaration:
+       "let" Name "=" Expression
+       "const" Name "=" Expression
+
+     Name:
+       letter
+       letter Sequence
+
+     Sequence:
+       letter
+       digit
+       "-"
+       letter Sequence
+       digit Sequence
+       "-" Sequence
+
+     Expression:
+       Term
+       Expression "+" Term
+       Expression "-" Term
+
+     Term:
+       Primary
+       Term "*" Primary
+       Term "/" Primary
+       Term "%" Primary
+
+     Primary:
+       Number
+       "(" Expression ")"
+       "-" Primary
+       "+" Primary
+       "sqrt(" Expression ")"
+       "pow(" Expression "," Integer ")"
+       Name
+       Name "=" Expression
+
+     Number
+       floating-point-literals
+
+     */
+    #+end_src
+
+    #+name: token-definition
+    #+begin_src C++ :main no :tangle tangled/calculator_v3.cpp
+      #include "std_lib_facilities.h"
+
+      class Token {
+      public:
+        char kind;
+        double value;
+        string name;
+        Token(char ch) :kind{ch}, value{0} {}
+        Token(char ch, double val) :kind{ch}, value{val} {}
+        Token(char ch, string n) :kind{ch}, name{n} {}
+      };
+
+      class Token_stream {
+        Token_stream();               // make Token_stream that reads from cin
+        Token_stream(istream&);        // reads from istream
+        Token get();
+        void putback(Token t);
+        void ignore(char c);          // discard characters up to and including 'c'
+      private:
+        bool full;
+        Token buffer;
+      };
+
+      // Constructor
+      Token_stream::Token_stream()
+        :full{false}, buffer{0} {}
+
+      const char let = "L";
+      const char con = "C";
+      const char quit = "q";
+      const char help = "h";
+      const char print = ";";
+      const char number = "8";
+      const char name = "a";
+      const char square_root = "s";
+      const char power = "p";
+      const string declykey = "let";
+      const string conkey = "con";
+      const string sqrtkey = "sqrt";
+      const string powkey = "pow";
+      const string quitkey = "quit";
+      const string helpkey = "help";
+    #+end_src
+    
+    #+name: token_stream
+    #+begin_src C++ :main no :tangle tangled/calculator_v3.cpp
+      Token Token_stream::get()
+      {
+        if (full) {
+          full = false;
+          return buffer;
+        }
+
+        char ch;
+        cin.get(ch);                  // cin.get does not skip white space
+        while (isspace(ch)){
+          if (ch=='\n') return Token{print};
+          cin.get(ch);
+        }
+
+        switch (ch){
+        case print:
+        case '(', case ')':
+        case '+', case '-', case '*', case '/', case '%':
+        case '=':
+        case ',':
+          return Token{ch};
+        case '.':
+        case '0', case '1', case '2', case '3', case '4'
+        case '5', case '6', case '7', case '8', case '9':
+          {
+            cin.putback(ch);
+            double val;
+            cin >> val;
+            return Token{number,val};
+          }
+        default:
+          if (isalpah(ch)) {
+            string s;
+            s += ch;
+            while (cin.get(ch) && (isalpha(ch)||isdigit(ch)||ch=='_')) s+=ch;
+            cin.putback(ch);
+            if (s==declkey) return Token{let};
+            if (s==conkey) return Token{con};
+            if (s==sqrtkey) return Token{square_root};
+            if (s==powkey) return Token{power};
+            if (s==helpkey) return Token{help};
+            if (s==quitkey) return Token{quit};
+            return Token{name,s};
+          }
+          error("Bad Token");
+        }
+      }
+
+      //---------------------------------------------------------------------
+
+      void Token_stream::putback(Token t)
+      {
+        if (full) error("putback() into full buffer");
+        buffer = t;
+        full = true;
+      }
+
+      //---------------------------------------------------------------------
+
+      void Token_stream::ignore(char c)
+      // 'c' is kind of token
+      {
+        // look in buffer first
+        if (full & c==buffer.kind) {
+          full = false;
+          return;
+        }
+        // if c is not equal to the kind of buffer
+        // empty buffer
+        full = false;
+
+        char ch = 0;
+        while (cin>>ch)
+          if (ch==c) return;
+      }
+    #+end_src
+
+    #+name: variables
+    #+begin_src C++ :main no
+      class Variable {
+      public:
+        string name;
+        double value;
+        bool is_const;
+        Variable(string n, double v, bool c) :name{n}, value{v}, is_const{c} {}
+      };
+
+      //------------------------------------------------------------------------
+
+      class Symbol_table {
+      public:
+        double get(string s);
+        void set(string s, double d);
+        bool is_declared(string s);
+        double declare(string s, double d, bool b);
+      private:
+        vector<Variable> var_table;
+      };
+
+      //-------------------------------------------------------------------------
+
+      double Symbol_table::get(string s)
+      {
+        for (const Variable& v : var_table)
+          if (v.name==s) return v.value;
+        error("get() undefined variable",s);
+      }
+
+      //-------------------------------------------------------------------------
+
+      void Symbol_table::set(string s, double d)
+      {
+        for (Variable& v: var_table)
+          if (v.name==s) {
+            v.value = d;
+            return;
+      S    }
+        error("set() undefined variable ",s);
+      }
+
+      //---------------------------------------------------------------------------
+
+      bool Symbol_table::is_declared(string s)
+      {
+        for (const Variable& v : var_table)
+          if (v.name==s) return true;
+        return false;
+      }
+
+      //---------------------------------------------------------------------------
+
+      double Symbol_table::declare(string s, double d, bool b)
+      {
+        if (is_declare(s)) error(s, "declared already");
+        var_table.push_back(Variable{s,d});
+        return d;
+      }
+
+      //--------------------------------------------------------------------------
+
+      Symbol_table st;
+    #+end_src
+
+    #+name: expression
+    #+begin_src C++ :main no :tangle tangled/calculator_v3.cpp
+      double expression(Token_stream& ts);
+
+      double primary(Token_stream& ts)
+      {
+        Token t = ts.get();
+        switch (t.kind) {
+        case '(':
+          {
+            double d = expression(ts);
+            t = ts.get();
+            if (t.kind!=')') error("')' expected");
+            return d;
+          }
+        case '-':
+          return -priamry(ts);
+        case '+':
+          return primary(ts);
+        case number:
+          return t.value;
+        case name:
+          {
+            Token t2 = ts.get();
+            if (t2=='='){
+              double d = expression(ts);
+              st.set(t.name,d);
+              return d;
+            }
+            else {                    // not an assignment
+              ts.putback(t2);
+              return st.get(t.name);
+            }
+          }
+        case square_root:
+          {
+            t = ts.get();
+            if (t.kind!='(') error("'(' expected");
+            double d = expression(ts);
+            t = ts.get();
+            if (t.kind!=')') error("')' exprected");
+            return sqrt(d);
+          }
+        case power:
+          {
+            t = ts.get();
+            if (t.kind!='(') error("'(' expected");
+            double d = expression(ts);
+            t = ts.get();
+            if (t.kind!=',') error("',' expected");
+            t = ts.get();
+            if (t.kind!=number) error("second argumnet of pow() is not a numner");
+            int i = int(t.value);
+            if (i!=t.value) error("second argument of pow() is not an integer");
+            t = ts.get();
+            if (t.kind!=')') error("')' expected");
+            return pow(d,i);
+          }
+        default:
+          error("primary expected");
+        }
+      }
+
+      //---------------------------------------------------------------------------
+
+      double term(Token_stream& ts)
+      {
+        double left = primary(ts);
+        Token t = ts.get();
+
+        while (true) {
+          switch (t.kind) {
+          case '*':
+            left *= primary(ts);
+            t = ts.get();
+            break;
+          case '/':
+            {
+              double d = primary(ts);
+              if (d==0) error("division by 0");
+              left /= d;
+              t = ts.get();
+              break;
+            }
+          case '%':
+            {
+              double d = primary(ts);
+              if (d==0) error("division by 0");
+              left %= d;
+              t = ts.get();
+              break;
+            }
+          default:
+            ts.putback(t);
+            return left;
+          }
+        }
+      }
+
+      //-----------------------------------------------------------------------------
+
+      double expression(Token_stream& ts)
+      {
+        double left = term(ts);
+        Token t = ts.get();
+
+        while (true) {
+          switch (t.kind) {
+          case '+':
+            left += term(ts);
+            t = ts.get();
+            break;
+          case '-':
+            left -= term(ts);
+            t = ts.get();
+            break;
+          case '=':
+            error("use '=' outside of declaration");
+          defualt:
+            ts.putback(t);
+            return left;
+          }
+        }
+      }
+    #+end_src
