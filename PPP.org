@@ -542,7 +542,7 @@
     extern int x;                   // another declaration
 
     double sqrt(double);            // declaration
-    double sqrt(double) {*/...*/};   // definition
+    double sqrt(double) {/*...*/};   // definition
     double sqrt(double);            // another declaration
 
     int sqrt(double);               // error!! inconsistency
