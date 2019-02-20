@@ -850,6 +850,8 @@
 
     #+end_src
 
+    #+RESULTS: chrono.h
+
     #+name: chrono.c
     #+begin_src C++ :main no :tangle tangled/chrono.cpp
       #include "chrono.h"
@@ -986,6 +988,297 @@
         }
       } // Chrono
     #+end_src
+* Ch 10
+** Summary
+   #+name: reading
+   #+begin_src C++ :main no :tangle ch10/reading.cpp
+     #include "std_lib_facilities.h"
+
+     struct Reading {
+       int hour;
+       double temperature;
+     };
+
+     int main()
+     {
+       cout << "Please enter input file name: ";
+       string iname;
+       cin >> iname;
+       ifstream ist{iname};
+       if (!ist) error("can't open input file ",iname);
+
+       string oname;
+       cout << "Please enter name of output file: ";
+       cin >> oname;
+       ofstream ost{oname};
+       if (!ost) error("can't open output file ",oname);
+
+       vector<Reading> temps;
+       int hour;
+       double temperature;
+       while (ist>>hour>>temperature) {
+         if (hour<0||23<hour) error("hour out of range");
+         temps.push_back(Reading{hour,temperature});
+       }
+
+       for (int i=0;i<temps.size();++i)
+         ost<<'('<<temps[i].hour<<','<<temps[i].temperature<<")\n";
+     }
+   #+end_src
+
+   I/O error handling
+    stream states
+    - =good()=: The operations succeeded
+    - =eof()=: We hit end of input
+    - =fail()=: Something unexpected happened
+    - =bad()=: Something unexpected and serious happened
+   Throwing error by =istream=.
+   =ist.exceptions(ist.exceptions()|ios_base::badbit);=
+
+   #+name: fill_vector
+   #+begin_src C++ :main no
+     void fill_vector(istream& ist,vector<int>,char terminator)
+     {
+       for (int i;ist>>i;) v.push_back(i);
+       if (ist.eof()) return;
+
+       ist.clear();
+
+       char c;
+       ist >> c;
+       if (c!=terminator) {
+         ist.unget();
+         ist.clear(ios_base::failbit); // set the state to fail()
+       }
+     }
+   #+end_src
+
+   Breaking the problem into manageble parts
+    - Reading values
+    - Prompting the users for input
+    - Writing error messages
+    - Skipping past "bad" input characters
+    - Testing the input against a range
+      #+name: error-handling
+      #+begin_src C++ :main no
+        void skip_to_int()
+        {
+          if (cin.fail()) {
+            cin.clear();
+
+            for (char ch;cin>>ch;) {
+              if(isdigit(ch)||ch=='-') {
+                cin.unget();
+                return;
+              }
+            }
+          }
+          error("no input");
+        }
+
+        int get_int()
+        {
+          int n = 0;
+          while (true) {
+            if (cin>>n) return n;
+            cout << "Sorry, that was not a number; please try again\n";
+            skip_to_int();
+          }
+        }
+
+        int get_int(int low,int high)
+        {
+          cout << "Please enter an integer in the range"
+               << low << " to " << high << " (inclusive):\n";
+
+          while (true) {
+            int n = get_int();
+            if (low<=n&&n<=high) return n;
+            cout << "Sorry"
+                 << n << " is not in the [" << low << ":" << high
+                 << "] range; please try again\n";
+          }
+        }
+      #+end_src
+
+   Reading a structured file
+   #+name: reading_temp
+   #+begin_src C++ :main no :tangle reading_temp.cpp
+     #include "std_lib_facilities.h"
+
+     const int not_a_reading = -7777;
+     const int not_a_month = -1;
+     constexpr int implausible_min = -200;
+     constexpr int implausible_max = 200;
+
+     vector<string> month_input_tbl = {
+                                       "jan","feb","mar","apr","may","jun",
+                                       "jul","aug","sep","oct","nov","dec"
+     };
+
+     // ------------------------------------------------------------
+
+     struct Day {
+       vector<double> hour {vector<double>(24,not_a_reading)};
+     };
+
+     struct Month {
+       int month {not_a_month};
+       vector<Day> day{32};
+     };
+
+     struct Year {
+       int year;
+       vector<Month> month{12};
+     };
+
+     struct Reading {
+       int day;
+       int hour;
+       double temperature;
+     };
+
+     //------------------------------------------------------------
+
+     istream& operator>>(istream& is,Reading &r)
+     // format: (3 4 9.7)
+     // check format, but don't bother with data validity
+     {
+       char ch1;
+       if (is>>ch1&&ch1!='(') {
+         is.unget();
+         is.clear(ios_base::failbit);
+         return is;
+       }
+
+       char ch2;
+       int d;
+       int h;
+       double t;
+       is>>d>>h>>t>>ch2;
+       if(!is||ch2!=')') error("bad reading");
+       r.day = d;
+       r.hour = h;
+       r.temperature = t;
+       return is;
+     }
+
+     //------------------------------------------------------------
+
+     istream& operator>>(istream& is, Month& m)
+     // format: {month feb ...}
+     {
+       char ch = 0;
+       if (is>>ch&&ch!='{') {
+         is.unget();
+         is.clear(ios_base::failbit);
+         return is;
+       }
+
+       string month_marker;
+       string mm;
+       is >> month_marker >> mm;
+       if (!is||month_marker!="month") error("bad start of month");
+       m.month = month_to_int(mm);
+
+       int duplicates = 0;
+       int invalids = 0;
+       for (Reading r;is>>r;){
+         if (is_valid(r)) {
+           if (m.day[r.day].hour[r.hour]!=not_a_reading)
+             ++duplicates;
+           m.day[r.day].hour[r.hour] = r.temperature;
+         }
+         else
+           ++invalids;
+       }
+       if (invalids) error("invalid readings in month",invalids);
+       if (duplicates) error("duplicate readings in month",duplicates);
+       end_of_loop(is,'}',"bad end of month");
+       return is;
+     }
+
+     //------------------------------------------------------------
+
+     istream& operator>>(istream& is,Year& y)
+     // format: {year 1972...}
+     {
+       char ch;
+       is >> ch;
+       if (ch!='{') {
+         is.unget();
+         is.clear(ios::failbit);
+         return is;
+       }
+
+       string year_marker;
+       int yy;
+       is >> year_marker >> yy;
+       if (!is||year_marker!="year") error("bad start of year");
+       y.year = yy;
+
+       while(true) {
+         Month m;
+         if(!(is>>m)) break;
+         y.month[m.month] = m;
+       }
+
+       end_of_loop(is,'}',"bad end of year");
+       return is;
+     }
+
+     //------------------------------------------------------------
+
+     bool is_valid(const Reading& r)
+     {
+       if (r.day<1||31<r.day) return false;
+       if (r.hour<0||23<r.hour) return false;
+       if (r.temperature<implausible_min||implausible_max<r.temperature)
+         return false;
+       return true;
+     }
+
+     // ------------------------------------------------------------
+
+     int month_to_int(string s)
+     {
+       for (int i=0;i<12;++i) if (month_input_tbl[i]==s) return i;
+       return -1;
+     }
+
+     // ------------------------------------------------------------
+
+     int main()
+     {
+       cout << "Please enter input file name: ";
+       string iname;
+       cin >> iname;
+       ifstream ifs{iname};
+       if(!ifs) error("can't open input file",iname);
+
+       ifs.exceptions(ifs.exceptions()|ios_base::badbit);
+
+       cout << "Please enter output file name: ";
+       string oname;
+       cin >> oname;
+       ofstream ofs{oname};
+       if (!ofs) error("can't open output file",oname);
+
+       vector<Year> ys;
+       while (true) {
+         Year y;
+         if (!(ifs>>y)) break;
+         ys.push_back(y);
+       }
+
+       cout << "read " << ys.size() << " years of readings\n";
+
+       for(Year& y : ys) print_year(ofs,y);
+     }
+   #+end_src
+   
+   We have to use the =()= initializer syntax to specify the number of elements for a =vector= for which an integer can be converted to the element type.
+
 * Calculator
    #+name: grammar
    #+begin_src C++ :main no :tangle tangled/calculator_v3.cpp
