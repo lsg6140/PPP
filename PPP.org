@@ -366,7 +366,17 @@
 *** Ex 1
    Make the input stream an explicit parameter
    =double expresssion() --> double expression(Token_stream& ts)=
- 
+*** Ex 2
+    #+name: ex2-08
+    #+begin_src C++ :main no
+      void print_vec_int(const vector<int>& v, const string& name)
+      {
+        cout << s << endl;
+        for (int i : v)
+          cout << i << ", ";
+        cout << endl;
+      }
+    #+end_src
 * Ch 9
 ** Summary
    - Types are helpful in
@@ -902,7 +912,7 @@
 
 * Calculator
    #+name: grammar
-   #+begin_src C++ :main no :tangle tangled/calculator_v3.cpp
+   #+begin_src C++ :main no :tangle calculator/calculator_v3.cpp
      /*
      Grammar
 
@@ -968,15 +978,15 @@
 
 
     #+name: header
-    #+begin_src C++ :main no :tangle tangled/calculator_v3.cpp
-      #include "std_lib_facilities.h"
+    #+begin_src C++ :main no :tangle calculator/calculator_v3.cpp
+      #include "../std_lib_facilities.h"
 
     #+end_src
 
 
 
     #+name: Constants
-    #+begin_src C++ :main no :tangle tangled/calculator_v3.cpp
+    #+begin_src C++ :main no :tangle calculator/calculator_v3.cpp
       const char let = 'L';
       const char con = 'C';
       const char quit = 'q';
@@ -1002,7 +1012,7 @@
     
 
     #+name: Class definitions
-    #+begin_src C++ :main no :tangle tangled/calculator_v3.cpp
+    #+begin_src C++ :main no :tangle calculator/calculator_v3.cpp
       class Token {
       public:
         char kind;
@@ -1036,7 +1046,7 @@
 
 
     #+name: token_stream
-    #+begin_src C++ :main no :tangle tangled/calculator_v3.cpp
+    #+begin_src C++ :main no :tangle calculator/calculator_v3.cpp
       Token Token_stream::get()
       {
         if (full) {
@@ -1100,7 +1110,7 @@
       // 'c' is kind of token
       {
         // look in buffer first
-        if (full & c==buffer.kind) {
+        if (full && c==buffer.kind) {
           full = false;
           return;
         }
@@ -1114,6 +1124,8 @@
       }
     #+end_src
 
+    #+RESULTS: token_stream
+
 
 
 
@@ -1121,7 +1133,7 @@
     Symbol_table is a container for Variable type.
 
     #+name: variables
-    #+begin_src C++ :main no :tangle tangled/calculator_v3.cpp
+    #+begin_src C++ :main no :tangle calculator/calculator_v3.cpp
       class Variable {
       public:
         string name;
@@ -1157,6 +1169,7 @@
       {
         for (Variable& v: var_table)
           if (v.name==s) {
+            if (v.is_const) error(v.name," is a constant");
             v.value = d;
             return;
           }
@@ -1176,7 +1189,7 @@
 
       double Symbol_table::declare(string s, double d, bool b)
       {
-        if (is_declared(s)) error(s, "declared already");
+        if (is_declared(s)) error(s, " declared already");
         var_table.push_back(Variable{s,d,b});
         return d;
       }
@@ -1199,7 +1212,7 @@
      - Name "=" Expression
  
     #+name: Primary
-    #+begin_src C++ :main no :tangle tangled/calculator_v3.cpp
+    #+begin_src C++ :main no :tangle calculator/calculator_v3.cpp
       double expression(Token_stream& ts);
 
       double primary(Token_stream& ts)
@@ -1274,42 +1287,42 @@
        - Term "%" Primary
 
     #+name: Term
-    #+begin_src C++ :main no :tangle tangled/calculator_v3.cpp
-      double term(Token_stream& ts)
-      {
-        double left = primary(ts);
-        Token t = ts.get();
-
-        while (true) {
-          switch (t.kind) {
-          case '*':
-            left *= primary(ts);
-            t = ts.get();
-            break;
-          case '/':
+    #+begin_src C++ :main no :tangle calculator/calculator_v3.cpp
+            double term(Token_stream& ts)
             {
-              double d = primary(ts);
-              if (d==0) error("division by 0");
-              left /= d;
-              t = ts.get();
-              break;
-            }
-          case '%':
-            {
-              double d = primary(ts);
-              if (d==0) error("division by 0");
-              left = fmod(left,d);
-              t = ts.get();
-              break;
-            }
-          default:
-            ts.putback(t);
-            return left;
-          }
-        }
-      }
+              double left = primary(ts);
+              Token t = ts.get();
 
-//-----------------------------------------------------------------------------
+              while (true) {
+                switch (t.kind) {
+                case '*':
+                  left *= primary(ts);
+                  t = ts.get();
+                  break;
+                case '/':
+                  {
+                    double d = primary(ts);
+                    if (d==0) error("division by 0");
+                    left /= d;
+                    t = ts.get();
+                    break;
+                  }
+                case '%':
+                  {
+                    double d = primary(ts);
+                    if (d==0) error("division by 0");
+                    left = fmod(left,d);
+                    t = ts.get();
+                    break;
+                  }
+                default:
+                  ts.putback(t);
+                  return left;
+                }
+              }
+            }
+
+      //-----------------------------------------------------------------------------
      
       #+end_src
 
@@ -1321,7 +1334,7 @@
        - Expression "-" Term
 
       #+name: Expression
-      #+begin_src C++ :main no :tangle tangled/calculator_v3.cpp
+      #+begin_src C++ :main no :tangle calculator/calculator_v3.cpp
         double expression(Token_stream& ts)
         {
           double left = term(ts);
@@ -1339,7 +1352,7 @@
               break;
             case '=':
               error("use '=' outside of declaration");
-            defualt:
+            default:
               ts.putback(t);
               return left;
             }
@@ -1358,7 +1371,7 @@
      =bool b= is =true= for =const=, =false= for =let=.
  
        #+name: Declaration
-       #+begin_src C++ :main no :tangle tangled/calculator_v3.cpp
+       #+begin_src C++ :main no :tangle calculator/calculator_v3.cpp
          double declaration(bool b, Token_stream& ts)
          {
            Token t = ts.get();
@@ -1383,7 +1396,7 @@
      - Expression
     
        #+name: Statement
-       #+begin_src C++ :main no :tangle tangled/calculator_v3.cpp
+       #+begin_src C++ :main no :tangle calculator/calculator_v3.cpp
          double statement(Token_stream& ts)
          {
            Token t = ts.get();
@@ -1404,7 +1417,7 @@
 
 
      #+name: Help functions
-     #+begin_src C++ :main no :tangle tangled/calculator_v3.cpp
+     #+begin_src C++ :main no :tangle calculator/calculator_v3.cpp
        // clean input after error
        void clean_up_mess(Token_stream& ts)
        {
@@ -1432,7 +1445,7 @@
      - Calculation Statement
 
        #+name: Calculate
-       #+begin_src C++ :main no :tangle tangled/calculator_v3.cpp
+       #+begin_src C++ :main no :tangle calculator/calculator_v3.cpp
          void calculate()
          {
            Token_stream ts;
@@ -1445,7 +1458,7 @@
                else {
                  if (t.kind==quit) return;
                  ts.putback(t);
-                 cout << result << expression(ts) << endl;
+                 cout << result << statement(ts) << endl;
                }
              }
              catch(exception& e) {
@@ -1461,27 +1474,15 @@
 
 
      #+name: main
-     #+begin_src C++ :main no :tangle tangled/calculator_v3.cpp
+     #+begin_src C++ :main no :tangle calculator/calculator_v3.cpp
        int main()
          try {
            st.declare("pi",3.1415926535,true);
            st.declare("e",2.7182818284,true);
            st.declare("k",1000,true);
 
-           // calculate();
+           calculate();
 
-           Token_stream ts;
-           double val = 0;
-           while (cin) {
-             cout << "> ";
-             Token t = ts.get();
-             cout << t.kind <<" for print" << endl;
-             if (t.kind==print)
-               cout << "= " << val << endl;
-             else
-               ts.putback(t);
-             val = expression(ts);
-           }
            return 0;
          }
          catch (exception& e) {
@@ -1501,60 +1502,4 @@
 
 
 
-   Token_stream test.
-   #+name: token stream test
-   #+begin_src C++ :main no :tangle calculator/ts_test.cpp :noweb yes
-     #include "../std_lib_facilities.h"
-
-     <<Constants>>
-
-     <<Class definitions>>
-
-     <<token_stream>>
-
-     ostream& operator<<(ostream& os, Token t)
-     {
-       os << "Kind: " << t.kind << ", Value: " << t.value
-          << ", Name: " << t.name;
-       return os;
-     }
-
-     int main()
-     {
-       Token_stream ts;
-
-       Token t{'p',"okay"};
-
-       cout << t << endl;
-     }
-   #+end_src
-   Works fine!
-
    
-   Expression test
-   #+name: expression test
-   #+begin_src C++ :main no :tangle calculator/expr_test.cpp :noweb yes
-     #include "../std_lib_facilities.h"
-
-     <<Constants>>
-
-     <<Class definitions>>
-
-     <<token_stream>>
-
-     <<variables>>
-
-     <<Primary>>
-
-     <<Term>>
-
-     <<Expression>>
-
-     int main()
-     {
-       Token_stream ts;
-       expression(ts);
-     }
-   #+end_src
-
-   #+RESULTS: expression test
