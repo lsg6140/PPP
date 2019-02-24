@@ -369,14 +369,20 @@
 *** Ex 2
     #+name: ex2-08
     #+begin_src C++ :main no
-      void print_vec_int(const vector<int>& v, const string& name)
+      void print(const vector<int>& v, const string& name)
       {
-        cout << s << endl;
-        for (int i : v)
-          cout << i << ", ";
+        cout << v.size() << " values in " << name << endl;
+        for (int i=0;i<v.size();++i) {
+          if (i%5==0) cout << endl;
+          cout << v(i);
+          if (i<v.size()-1) cout << ", ";
+        }
         cout << endl;
       }
     #+end_src
+
+    #+RESULTS: ex2-08
+
 * Ch 9
 ** Summary
    - Types are helpful in
