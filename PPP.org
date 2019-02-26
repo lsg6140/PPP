@@ -372,17 +372,147 @@
       void print(const vector<int>& v, const string& name)
       {
         cout << v.size() << " values in " << name << endl;
-        for (int i=0;i<v.size();++i) {
+        cout << '{' << v[0] <<", ";
+        for (int i=1;i<v.size();++i) {
           if (i%5==0) cout << endl;
-          cout << v(i);
+          cout << v[i];
           if (i<v.size()-1) cout << ", ";
         }
-        cout << endl;
+        cout << '}' << endl;
       }
     #+end_src
 
     #+RESULTS: ex2-08
+*** Ex 3 
+    #+name: ex3-08
+    #+begin_src C++ :main no :results output
+      #include "/home/lsg/Programming/PPP/std_lib_facilities.h"
 
+      void print(const vector<int>& v, const string& name)
+      {
+        cout << v.size() << " values in " << name << endl;
+        cout << '{' << v[0] <<", ";
+        for (int i=1;i<v.size();++i) {
+          if (i%5==0) cout << endl;
+          cout << v[i];
+          if (i<v.size()-1) cout << ", ";
+        }
+        cout << '}' << endl;
+      }
+
+
+      void fibonacci(const int x,const int y,vector<int>& v,const int n)
+      {
+        if (n<1) return;
+        if (n>=1) v.push_back(x);
+        if (n>=2) v.push_back(y);
+
+        for (int i=2; i<n; ++i) {
+          int k = v[i-2] + v[i-1];
+          v.push_back(k);
+        }
+      }
+
+      int main()
+      {
+        int x=1;
+        int y=2;
+        vector<int> v;
+        int n=10;
+        fibonacci(x,y,v,n);
+        print(v,"fibonacci");
+
+        return 0;
+      }
+    #+end_src
+
+    #+RESULTS: ex3-08
+    : 10 values in fibonacci
+    : {1, 2, 3, 5, 8, 
+    : 13, 21, 34, 55, 89}
+    If the name of source code block is "main", there is no output of result. (I don't know why...)
+
+*** Ex 7 
+    #+name: ex07
+    #+begin_src C++ :main no :tangle ch08/ex07.cpp
+      #include "/home/lsg/Programming/PPP/std_lib_facilities.h"
+
+      vector<string> name;
+      vector<double> age;
+
+      void read_name()
+      {
+        string s;
+        for (int i=0; i<5; ++i) {
+          cout << "Enter the name: ";
+          cin >> s;
+          for (int j=0; j<name.size(); ++j)
+            if (s==name[j]) error("duplicate name: ", s);
+          name.push_back(s);
+        }
+      }
+
+      void store_age()
+      {
+        double d = 0;
+        for (int i=0; i<name.size(); ++i) {
+          cout << "Enter the age of " << name[i] << ": ";
+          cin >> d;
+          age.push_back(d);
+        }
+      }
+
+      void print()
+      {
+        for (int i=0; i<name.size(); ++i)
+          cout << '(' << name[i] << ", " << age[i] << ')' << endl;
+      }
+
+      int find_index(const vector<string>& v, const string& s)
+      {
+        for (int i=0; i<v.size(); ++i)
+          if (s == v[i]) return i;
+        error("name not found: ", s);
+      }
+
+      void sort_age(const vector<string>& cp)
+      {
+        vector<double> copy_age;
+        int index;
+        for (int i=0; i<name.size(); ++i){
+          index = find_index(cp, name[i]);
+          copy_age.push_back(age[index]);
+        }
+        age = copy_age;
+      }
+
+      int main()
+      try
+        {
+          read_name();
+          vector<string> copy_name = name;
+          store_age();
+          print();
+
+          sort(name.begin(),name.end());
+
+          sort_age(copy_name);
+
+          print();
+
+          return 0;
+        }
+       catch(exception& e) {
+         cerr << e.what() << endl;
+         return 1;
+       }
+
+       catch(...) {
+         cerr << "Unkown exception\n";
+         return 2;
+       }
+    #+end_src
+  
 * Ch 9
 ** Summary
    - Types are helpful in
@@ -430,7 +560,7 @@
    - Namespaces are often used to identify a group of helper functions
 *** Date class 
     #+name: chrono.h
-    #+begin_src C++ :main no :tangle tangled/chrono.h
+    #+begin_src C++ :main no :tangle ch10/chrono.h
       namespace Chrono {
         enum class Month {
                           Jan=1,Feb,Mar,Apr,May,Jun,Jul,Aug,Sep,Oct,Nov,Dec
@@ -472,6 +602,10 @@
 
         //------------------------------------------------------------
 
+        int month_to_day(Date::Month m);
+
+        // ------------------------------------------------------------
+
         bool operator==(const Date& a,const Date& b);
         bool operator!=(const Date& a,const Date& b);
 
@@ -490,7 +624,7 @@
     #+RESULTS: chrono.h
 
     #+name: chrono.c
-    #+begin_src C++ :main no :tangle tangled/chrono.cpp
+    #+begin_src C++ :main no :tangle ch10/chrono.cpp
       #include "chrono.h"
 
       namespace Chrono {
@@ -510,14 +644,18 @@
         Date::Date()
           :y{default_date().year()},
            m{default_date().month()},
-           d{defualt_date(),day()}
+           d{defualt_date().day()}
         {}
 
         // member functions
 
         void Date::add_day(int n)
         {
-          //...
+          int dd = d+n;
+          int years = dd/365;
+          int days = dd%365;
+          add_year(years);
+          add_month(days);
         }
 
         void Date::add_month(int n)
@@ -562,6 +700,54 @@
         bool leapyear(int y)
         {
           // ...
+        }
+
+        // ------------------------------------------------------------
+
+        int month_to_days(Date::Month m)
+        {
+          switch (m) {
+          case Month::Jan: return 0;
+          case Month::Feb: return 31;
+          case Month::Mar: return 31+28;
+          case Month::Apr: return 31+28+31;
+          case Month::May: return 31+28+31+30;
+          case Month::Jun: return 31+28+31+30+31;
+          case Month::Jul: return 31+28+31+30+31+30;
+          case Month::Aug: return 31+28+31+30+31+30+31;
+          case Month::Sep: return 31+28+31+30+31+30+31+31;
+          case Month::Oct: return 31+28+31+30+31+30+31+31+30;
+          case Month::Nov: return 31+28+31+30+31+30+31+31+30+31;
+          case Month::Dec: return 31+28+31+30+31+30+31+31+30+31+30;
+          }
+        }
+
+        // ------------------------------------------------------------
+
+        int day_in_year(const Date& d)
+        {
+          int diy = month_to_days(d.month());
+          diy += d.day();
+          if (leapyear(d.year()) && d.month()>Date::feb) ++diy;
+          return diy;
+        }
+
+        // ------------------------------------------------------------
+
+        int n_leapyears(int y)
+        {
+          // leap years from 1970
+          int nl = 0;
+          for (int i=1970;i<y;++i)
+            if (leapyear(y)) ++nl;
+          return nl;
+        }
+
+        int days_linear(const Date& d)
+        {
+          if (d.year()<first_date.year()) error("days_linear(): year must be 1970 or later");
+          int y = d.year() - first_date.year();
+          return y*365 + n_leapyears(d.year()) + day_in_year(d) - 1;
         }
 
         // ------------------------------------------------------------
@@ -915,7 +1101,323 @@
    #+end_src
    
    We have to use the =()= initializer syntax to specify the number of elements for a =vector= for which an integer can be converted to the element type.
+** Exercise
+*** Drill 1
+    #+name: d1
+    #+begin_src C++ :main no :tangle ch10/drill01.cpp
+      #include "/home/lsg/Programming/PPP/std_lib_facilities.h"
 
+      struct Point {
+        double x;
+        double y;
+
+        Point() :x{0},y{0}{}
+        Point(double xx,double yy) :x{xx},y{yy} {}
+      };
+
+      ostream& operator<<(ostream& os, const Point& p)
+      {
+        os << '(' << p.x << ',' << p.y << ')';
+      }
+
+      istream& operator>>(istream& is, Point& p)
+      {
+        double xx,yy;
+        char ch1,ch2,ch3;
+        is>>ch1>>xx>>ch2>>yy>>ch3;
+        if (!is) return is;
+        if (ch1!='('||ch2!=','||ch3!=')') {
+          is.clear(ios_base::failbit);
+          return is;
+        }
+        p = Point{xx,yy};
+        return is;
+      }
+
+      bool operator==(const Point& p1, const Point& p2)
+      {
+        return (p1.x==p2.x&&p1.y==p2.y);
+      }
+
+      bool operator!=(const Point& p1, const Point& p2)
+      {
+        return !(p1==p2);
+      }
+
+      void print(const vector<Point>& p)
+      {
+        for (int i=0; i<p.size(); ++i) {
+          cout << p[i] << endl;
+        }
+      }
+
+      void fprint(const vector<Point>& p, const string& s)
+      {
+        ofstream ost{s};
+        if (!ost) error("can't open output file ",s);
+        for (int i=0; i<p.size(); ++i) {
+          ost << p[i] << endl;
+        }
+      }
+
+      void read_from_file(vector<Point>& point, const string& filename)
+      {
+        ifstream ist{filename};
+        if (!ist) error("can't open input file, ",filename);
+
+        for (Point p; ist>>p;) 
+          point.push_back(p);
+      }
+
+      void compare_vectors(const vector<Point>& p1, const vector<Point>& p2)
+      {
+        if (p1.size()!=p2.size()) error("Something's wrong");
+        for (int i=0; i<p1.size(); ++i) {
+          if (p1[i]!=p2[i])
+            error("Something's wrong");
+        }
+        cout << "Two vectors are identical" << endl;
+      }
+
+      int main()
+      try {
+        vector<Point> original_points;
+        double xx;
+        double yy;
+        int i=0;
+        while(cin>>xx>>yy){
+          ++i;
+          original_points.push_back(Point{xx,yy});
+          if (i>6) break;
+        }
+
+        string filename = "mydata.txt";
+        fprint(original_points,filename);
+
+
+        vector<Point> processed_points;
+
+        read_from_file(processed_points,filename);
+
+        compare_vectors(original_points, processed_points);
+        return 0;
+      }
+
+       catch(exception& e) {
+         cerr << "exception: " << e.what() << endl;
+         return 1;
+       }
+       catch(...) {
+         cerr << "Unkown exception\n";
+         return 2;
+       }
+    #+end_src
+
+*** Ex 1
+    #+begin_src conf :tangle ch10/integers.txt
+      10 20 30 40
+    #+end_src
+
+    #+name: ex01
+    #+begin_src C++ :main no
+      // sum of whitespace seperated integers in a file
+      #include "/home/lsg/Programming/PPP/std_lib_facilities.h"
+
+      int main()
+      {
+        const string& filename = "/home/lsg/Programming/PPP/ch10/integers.txt";
+
+        ifstream ifs{filename};
+        if(!ifs) error("can't open the file, ",filename);
+
+        int n;
+        vector<int> numbers;
+        while(ifs>>n) {
+          numbers.push_back(n);
+        }
+
+        for(int i : numbers)
+          cout << i << ' ';
+        cout << endl;
+
+        int sum;
+        for(int i : numbers)
+          sum += i;
+        cout << "sum is " << sum << endl;
+
+      }
+    #+end_src
+
+    #+RESULTS: ex01
+    |  10 | 20 |  30 | 40 |
+    | sum | is | 100 |    |
+
+*** Ex 2
+    #+name: ex02
+    #+begin_src C++ :main no :tangle ch10/store_temps.cpp
+      #include "../std_lib_facilities.h"
+
+      struct Reading {
+        int hour;
+        double temperature;
+      };
+
+      istream& operator>>(istream& is,Reading& r)
+      {
+        int h;
+        double t;
+        is >> h >> t;
+        if(!is) return is;
+
+        r = Reading{h,t};
+
+        return is;
+      }
+
+      ostream& operator<<(ostream& os,const Reading& r)
+      {
+        int h = r.hour;
+        double t = r.temperature;
+        os << h << ' ' << t;
+        return os;
+      }
+
+      void fill_reading(istream& ist, vector<Reading>& v, char terminator)
+      {
+        for (Reading r; ist>>r;) v.push_back(r);
+        if (ist.eof()) return;
+
+        if (ist.bad()) error("ist is bad");
+        if (ist.fail()) {
+          ist.clear();
+
+          char c;
+          ist >> c;
+          if (c!=terminator) {
+            ist.unget();                  // put the character back
+            ist.clear(ios_base::failbit); // set the state to fail()
+          }
+        }
+      }
+
+      void write_file(const vector<Reading>& v, string filename)
+      {
+        ofstream ofs{filename};
+        if (!ofs) error("can't open the file ",filename);
+
+        for (Reading r : v)
+          ofs << r << endl;
+      }
+
+      const int min_temp = -43;
+      const int max_temp = 107;
+
+      Reading random_reading()
+      // creates n random temperatures
+      {
+        int h = rand()%24;
+        double t = min_temp + (double)rand()/RAND_MAX*(max_temp-min_temp);
+        return Reading{h,t};
+      }
+
+
+      int main()
+      try {
+        vector<Reading> temps;
+        char terminator = 't';
+        // cout << "Enter hour and temperature" << endl;
+        // cout << "type '" << terminator << "' to finish input" << endl;
+        // fill_reading(cin,temps,terminator);
+        for (int i=0; i<50; ++i)
+          temps.push_back(random_reading());
+
+        string filename = "raw_temps.txt";
+
+        write_file(temps,filename);
+
+        return 0;
+      }
+
+       catch(exception& e) {
+         cerr << "exception error " << e.what();
+         return 1;
+       }
+
+       catch(...) {
+         cerr << "unkown exception";
+         return 2;
+       }
+    #+end_src
+
+    #+RESULTS: ex02
+* Ch 11 
+** Summary
+  - Output precision: =setprecision(int n)=
+  - Output field width: =setw(int n)=
+  - Binary I/O: When we move from charater-oriented I/O to binary I/O, we give up our usual =>>= and =<<= operators.
+    =ostream ofs{oname,ios_base::binary}=
+    =for(int x : v) ofs.write(as_byte(x),sizeof(int))=
+    #+name: punc_stream
+    #+begin_src C++ :main no
+      #include "../std_lib_facilities.h"
+
+      class Punct_stream {
+      public:
+        Punct_stream(istream& is)
+          :source{is},sensitive{true} {}
+
+        void whitespace(const string& s) {white = s;}
+        void add_white(char c) {white += c;}
+        bool is_whitespace(char c);
+        void case_sensitive(bool b) {sensitive = b};
+        bool is_case_sensitive() {return sensitive};
+
+        Punct_stream& operator>>(string& s);
+        operator bool();
+
+      private:
+        istream& source;              // character source
+        istringstream buffer;         // let buffer do our formatting
+        string white;                 // charaters considered whitespace
+        bool sensitive;
+      };
+
+      Punct_stream& Punct_stream::operator>>(string& s)
+      {
+        while (!(buffer>>s)) {
+          if (buffer.bad()||!source.good()) return *this;
+          buffer.clear();
+
+          string line;
+          getline(source,line);
+
+          for (char& ch : line) {
+            if (is_whitespace(ch))
+              ch = ' ';
+            else if (!sensitive)
+              ch = tolower(ch);
+          }
+
+          buffer.str(line);           // put string into stream
+          // set the istringstream buffer's string to line
+        }
+        return *this;
+        // *this is a reference to the stream itself
+      }
+
+      bool Punct_stream::is_whitespace(char c)
+      {
+        for (char w : white)
+          if (c==w) return true;
+        return false;
+      }
+
+      Punct_stream::operator bool()
+      {
+        return !(source.fail()||source.bad())&&buffer.good();
+      }
+
+    #+end_src
 * Calculator
    #+name: grammar
    #+begin_src C++ :main no :tangle calculator/calculator_v3.cpp
@@ -1505,7 +2007,13 @@
          }
      #+end_src
 
+     #+RESULTS: main
+     : 10 values in fibonacci
+     : {1, 2, 3, 5, 8, 
+     : 13, 21, 34, 55, 89}
+
 
 
 
    
+
