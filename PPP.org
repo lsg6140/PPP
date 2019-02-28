@@ -1249,8 +1249,8 @@
     #+end_src
 
     #+RESULTS: ex01
-    |  10 | 20 |  30 | 40 |
-    | sum | is | 100 |    |
+    : Lines containing a word: file
+    : Line 1: This is The Input file    for the Lower case OUTPUT
 
 *** Ex 2
     #+name: ex02
@@ -1418,6 +1418,339 @@
       }
 
     #+end_src
+
+    #+RESULTS: punc_stream
+
+** Exercise
+*** Drill
+    #+name: test_output
+    #+begin_src C++ :main
+      #include "/home/lsg/Programming/PPP/std_lib_facilities.h"
+
+      void print_float(double d)
+      {
+        cout << "defaultfloat:\t" << d << endl
+             << "fixed:\t" << fixed << d << endl
+             << "scientific:\t" << scientific << d << endl;
+      }
+      int main()
+      {
+        int birth_year = 1979;
+
+        cout << "Decimal: " << '\t' << birth_year << endl
+             << "Hexadecimal: " << '\t' <<hex << birth_year << endl
+             << "Octal: " << '\t' << oct << birth_year << endl;
+
+        double d = 1234567.89;
+        print_float(d);
+
+        return 0;
+      }
+    #+end_src
+
+    #+RESULTS: test_output
+    | Decimal:      |         1979 |
+    | Hexadecimal:  |          7bb |
+    | Octal:        |         3673 |
+    | defaultfloat: |  1.23457e+06 |
+    | fixed:        |   1234567.89 |
+    | scientific:   | 1.234568e+06 |
+
+    #+name: d8
+    #+begin_src C++ :main no :tangle ch11/drill08.cpp
+      #include "../std_lib_facilities.h"
+
+      int main()
+      {
+        int a,b,c,d;
+
+        cin >> a >> oct >> b >> hex >> c >> d;
+        cout << a << '\t' << b << '\t' << c << '\t' << d << endl;
+
+        return 0;
+      }
+    #+end_src
+
+   - Manipulator: Terms that are used to change the behavior of a stream
+   - Fields: A mechainsm for integer to control the space a value takes up. (set field width) =setw()=
+
+*** Ex1
+    #+begin_src conf :tangle ch11/input.txt
+      This is The Input file,,, for the Lower case OUTPUT!!.
+      Multiline works?????
+    #+end_src
+
+    #+name: ex01
+    #+begin_src C++ :main no :tangle ch11/ex01.cpp :results output
+      #include "/home/lsg/Programming/PPP/std_lib_facilities.h"
+
+      void copy_to_lower(const string& iname,const string& oname)
+      {
+        ifstream ist{iname};
+        if (!ist) error("can't open the file ",iname);
+
+        ofstream ost{oname};
+        if (!ost) error("can't open the file ",oname);
+
+        char ch;
+        while (ist.get(ch)) {
+          if (isalpha(ch)) ch = tolower(ch);
+          ost << ch;
+        }
+      }
+
+      vector<string> words_in_line(string& line)
+      {
+        for (char& ch : line)
+          switch (ch) {
+          case ';': case '.': case ',': case '?': case '!':
+            ch = ' ';
+          }
+
+        stringstream ss{line};
+        vector<string> vs;
+        for (string word; ss>>word;)
+          vs.push_back(word);
+        return vs;
+      }
+
+      void find_word(const string& iname,const string& s)
+      {
+        ifstream ist{iname};
+        if (!ist) error("can't open the file ",iname);
+
+        int i=0;
+        string line;
+
+        cout << "Lines containing a word: " << s << endl;
+        while (getline(ist,line)) {
+          ++i;
+          vector<string> words = words_in_line(line);
+          for (int j=0; j<words.size(); ++j) {
+            if (words[j] == s)
+              cout << "Line " << i << ": " << line << endl;
+          }
+        }
+      }
+
+      int main()
+        try {
+          string iname = "/home/lsg/Programming/PPP/ch11/input.txt";
+          string oname = "/home/lsg/Programming/PPP/ch11/output.txt";
+
+          copy_to_lower(iname,oname);
+
+          find_word(iname,"file");
+        }
+        catch(exception& e) {
+          cerr << "Exception: " <<e.what();
+          return 1;
+        }
+        catch(...) {
+          cerr << "Unkown exception";
+          return 2;
+        }
+    #+end_src
+
+    #+name: ex09
+    #+begin_src C++ :main no :tangle ch11/ex09.cpp
+      #include "/home/lsg/Programming/PPP/std_lib_facilities.h"
+
+      vector<string> split(const string& s)
+      {
+        istringstream is{s};
+        vector<string> vs;
+        string buf;
+        while (is>>buf)
+          vs.push_back(buf);
+        return vs;
+      }
+
+      vector<int> spliti(const string& s)
+      {
+        vector<int> res;
+        bool in_word = false;
+        for (int i=0; i<s.size(); ++i) {
+          if (isspace(s[i]))
+            in_word = false;
+          else {
+            if (!in_word)
+              res.push_back(i);
+            in_word = true;
+          }
+        }
+        return res;
+      }
+
+      void print_word1(const string& s,int i)
+      {
+        for (;i<s.size()&&!isspace(s[i]); ++i)
+          cout << s[i];
+        cout << ' ';
+      }
+
+      int main()
+      {
+        cout << "Please enter a line:\n";
+
+        string line;
+        while (getline(cin,line)) {
+          cout << "line:\n" << line << endl;
+
+          vector<string> ln1 = split(line);
+          cout << "words in line:\n";
+          for (int i=0;i<ln1.size();++i)
+            cout << ln1[i] << ' ';
+          cout << endl;
+
+          vector<int> ln2 = spliti(line);
+          cout << "words in line:\n";
+          for (int i=0;i<ln2.size();++i)
+            print_word1(line,ln2[i]);
+          cout << endl;
+
+          cout << "Please enter another line:\n";
+        }
+      }
+    #+end_src
+* A Display Model
+  use FLTK used in this book, FLTK library was installed in Ubuntu 18.04 (at 28th Feb 2019) by =sudo apt install libfltk1.3-dev=.
+*** Issue 1 in compiling libbookgui.a
+  To compile the next example, GUI libraries used in book should be compiled to archive file =libbookgui.a=. Source code in =GUI= folder provided by Stroustrup has some issue. When excute =make= in =GUI= folder, compiler complains about ambiguity of reference to 'Window' in =Simple_window.h=. To fix this problem, =struct Simple_window : Window= in 17th line of =Simple_window.h= was changed to =struct Simple_window : Graph_lib::Window=. I am not sure why =using namespace Graph_lib= does not solve this issue. 
+*** Issue 2 in compiling libbookgui.a
+  Function =bool Graph_lib::can_open(const string&)= in =Graph.cpp= produced error of wrong return type. (I am not sure why...) I modified this function as 
+  #+name: modification of can_open
+  #+begin_src C++ :main no
+    bool can_open(const string& s)
+    {
+      ifstream ff(s.c_str());
+      if (ff) return true;
+      return false;
+    }
+  #+end_src
+
+  To compile the next example, library for image related functions should be included to make =Fl_JPEG_Image= function work. Compile was done with flags such that =g++ guiex.cpp libbookgui.a -lfltk -lfltk_images=.
+*** TODO How to run C++ source code in emacs that should be compiled with other object files??
+  #+name: gui example
+  #+begin_src C++ :main no :tangle ch12/guiex.cpp :flags -lfltk -lfltk_images
+    #include "/home/lsg/Programming/PPP/GUI/Simple_window.h"
+    #include "/home/lsg/Programming/PPP/GUI/Graph.h"
+
+    int main()
+    {
+      using namespace Graph_lib;
+
+      Point tl{100,100};
+
+      Simple_window win{tl,600,400,"Canvas"};
+
+      Polygon poly;
+
+      poly.add(Point{300,200});
+      poly.add(Point{350,100});
+      poly.add(Point{400,200});
+
+      poly.set_color(Color::red);
+
+      win.attach(poly);
+
+      win.wait_for_button();
+    }
+  #+end_src
+
+  #+RESULTS: gui example
+
+  #+name: display
+  #+begin_src C++ :main no :tangle ch12/dispaly.cpp
+    #include "../GUI/Simple_window.h"
+    #include "../GUI/Graph.h"
+    #include <iostream>
+    #include <stdexcept>
+
+    using namespace std;
+    using namespace Graph_lib;
+
+    int main()
+      try{
+        Point tl{100,100};
+
+        Simple_window win{tl,600,400,"Canvas"};
+
+        Axis xa{Axis::x,Point{20,300},280,10,"x axis"};
+        win.attach(xa);
+        win.set_label("Canvas #2");
+
+        Axis ya{Axis::y,Point{20,300},280,10,"y axis"};
+        ya.set_color(Color::cyan);
+        ya.label.set_color(Color::dark_red);
+        win.attach(ya);
+        win.set_label("Canvas #3");
+
+        Function sine{sin,0,100,Point{20,150},1000,50,50};
+        // range[0:100) start at (20,150)
+        // using 1000 points, scale x and y *50
+        win.attach(sine);
+        win.set_label("Canvas #4");
+        sine.set_color(Color::blue);
+
+        Polygon poly;
+        poly.add(Point{300,200});
+        poly.add(Point{350,100});
+        poly.add(Point{400,200});
+
+        poly.set_color(Color::red);
+        poly.set_style(Line_style::dash);
+        win.attach(poly);
+        win.set_label("Canvas #5");
+
+        Rectangle r{Point{200,200},100,50};
+        win.attach(r);
+        win.set_label("Canvas #6");
+
+        Closed_polyline poly_rect;
+        poly_rect.add(Point{100,50});
+        poly_rect.add(Point{200,50});
+        poly_rect.add(Point{200,100});
+        poly_rect.add(Point{100,100});
+        win.attach(poly_rect);
+
+        poly_rect.add(Point{50,75});
+
+        r.set_fill_color(Color::yellow);
+        poly.set_style(Line_style(Line_style::dash,4));
+        poly_rect.set_style(Line_style(Line_style::dash,2));
+        poly_rect.set_fill_color(Color::green);
+        win.set_label("Canvas #7");
+
+        Text t{Point{150,150},"Hello, graphical world!"};
+        win.attach(t);
+        win.set_label("Canvas #8");
+
+        t.set_font(Graph_lib::Font::times_bold);
+        t.set_font_size(20);
+        win.set_label("Canvas #9");
+
+        ostringstream oss;
+        oss << "screen size: " << x_max() << "*" << y_max()
+            << "; window size: " << win.x_max() << "*" << win.y_max();
+        Text sizes{Point{100,20},oss.str()};
+        sizes.set_font_size(10);
+        win.attach(sizes);
+
+        win.wait_for_button();
+      }
+      catch(exception& e) {
+        cerr << "Exception error " << e.what();
+        return 1;
+      }
+      catch(...) {
+        cerr << "Unknown expection";
+        return 2;
+      }
+  #+end_src
+
+   
+
 * Calculator
    #+name: grammar
    #+begin_src C++ :main no :tangle calculator/calculator_v3.cpp
